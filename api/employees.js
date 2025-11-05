@@ -33,7 +33,8 @@ router.post("/employees", async (req, res) => {
 });
 
 router.param("id", async (req, res, next, id) => {
-  if (id < 0) return res.status(400).send("ID must be a positive integer.");
+  if (!/^\d+$/.test(id))
+    return res.status(400).send("ID must be a positive integer.");
 
   const employee = await getEmployee(id);
   if (!employee) return res.status(404).send("Employee not found.");
@@ -42,19 +43,20 @@ router.param("id", async (req, res, next, id) => {
   next();
 });
 
-router.get("/:id", (req, res) => {
+router.get("/employees/:id", (req, res) => {
   res.send(req.employee);
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/employees/:id", async (req, res) => {
   if (!req.body) return res.status(400).send("Request must have a body.");
-
-  // Note: we grab the ID from the request parameters, not the body
   const { name, birthday, salary } = req.body;
   if (!name || !birthday || !salary)
     return res
       .status(400)
       .send("Request body must have: name, birthday, salary");
+
+  if (!/^\d+$/.test(req.employee.id))
+    return res.status(400).send("ID must be a positive integer.");
 
   const employee = await updateEmployee({
     id: req.employee.id,
@@ -62,13 +64,12 @@ router.put("/:id", async (req, res) => {
     birthday,
     salary,
   });
+
   res.send(employee);
 });
 
-router.delete("/:id", async (req, res) => {
-  if (id < 0) return res.status(400).send("ID must be a positive integer.");
-
-  const employee = await getEmployee(id);
+router.delete("/employees/:id", async (req, res) => {
+  const employee = await getEmployee(req.employee.id);
   if (!employee) return res.status(404).send("Employee not found.");
   await deleteEmployee(req.employee.id);
   res.sendStatus(204);
